@@ -158,7 +158,27 @@
             deepLinking: true,
             filter: {!! config('l5-swagger.defaults.ui.display.filter') ? 'true' : 'false' !!},
             persistAuthorization: "{!! config('l5-swagger.defaults.ui.authorization.persist_authorization') ? 'true' : 'false' !!}",
-
+            requestInterceptor: function(request) {
+                let token = localStorage.getItem('authToken');
+                if (token) {
+                    request.headers['Authorization'] = 'Bearer ' + token;
+                }
+                return request;
+            },
+            responseInterceptor: function(response) {
+                if (response.url && response.url.includes('login') && response.status === 200) {
+                    try {
+                        const data = response.body;
+                        if (data.authorization.token) {
+                            localStorage.setItem('authToken', data.authorization.token);
+                            console.log("Token enregistré :", data.authorization.token);
+                        }
+                    } catch(e) {
+                        console.error("Erreur lors de l'analyse de la réponse de login", e);
+                    }
+                }
+                return response;
+            }
         })
 
         window.ui = ui
